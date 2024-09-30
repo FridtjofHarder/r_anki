@@ -5,14 +5,12 @@ if (any(installed_packages == FALSE)) {
   install.packages(required_packages[!installed_packages])
 }
 invisible(lapply(required_packages, library, character.only = TRUE))
-source("my_functions.R")
 
-survey_data <- anki_data_comprehensive_five_groups
-####### read .xlsx file
-View(survey_data)
+survey_data <- read_xlsx("data/processed/anki_data_comprehensive.xlsx") # read survey data with all five groups
+
 ####### create df structure for descriptive stats. Age is not yet analysed descriptivally. Order of groups is: KS22, PD22, KS23, PD23
 
-students_per_group <- c(196, 107, 111, 266, 232) # number of students who wrote the exam in each group (excluding students absent from the exam). Data taken from score reports for each exam.
+total_students_per_group <- c(196, 107, 111, 266, 232) # number of students who wrote the exam in each group (excluding students absent from the exam). Data taken from score reports for each exam.
 groups <- unique(survey_data$group) # vector of different groups
 
 respondents <- table(survey_data$group)[groups] # create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
@@ -115,6 +113,8 @@ relocate(df_reshaped_helpful, study_material)
 df_reshaped_helpful$groups <- factor(df_reshaped_helpful$groups, levels = unique(df_reshaped_helpful$groups), ordered = T)
 
 df_reshaped_helpful_for_plot <- df_reshaped_helpful # prepare for renaming
+
+
 
 df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_script"] <- "script" # rename for plot legend
 df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_video"] <- "video"
