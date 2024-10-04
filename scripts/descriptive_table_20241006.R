@@ -29,16 +29,40 @@ score_percentages_sds_sorted <- score_percentages_sds[match(groups, score_percen
 
 score_percentages_means_sds <- paste(round(score_percentages_means_sorted[,2], 2), "\u00B1", round(score_percentages_sds_sorted[,2], 2)) # paste means +/- sds after rounding to 2 digits
 
-descriptive_matrix <- cbind(respondents, response_rate = response_rate, gender_table, score_percentages_means_sds = score_percentages_means_sds) # combine to table with all descriptive stats
-descriptive_df <- data.frame(descriptive_matrix) # convert matrix to df
+descriptive_df <- data.frame(respondents = as.vector(respondents), # create data frame with all important descriptive data
+                                 response_rate = as.vector(response_rate),
+                                 score_percentages_means = score_percentages_means_sorted[, 2],
+                                 score_percentages_sds = score_percentages_sds_sorted[, 2],
+                                 as.data.frame.matrix(gender_table))
+# descriptive_matrix <- data.frame(cbind(respondents, response_rate = response_rate, gender_table, score_percentages_means_sds = score_percentages_means_sds)) # combine to table with all descriptive stats
+# descriptive_matrix_df <- cbind.data.frame([respondents = respondents, response_rate = response_rate, gender_table, score_percentages_means_sds = score_percentages_means_sds], make.row.names = FALSE) # combine to table with all descriptive stats
+# descriptive_df <- data.frame(descriptive_matrix) # convert matrix to df
+# descriptive_df["totals", 1] <- sum(descriptive_df[, "respondents"])
+
+descriptive_df["totals", ] <- c(sum(respondents), # add bottom row with totals over all seminar and lecture exams
+                                100 * sum(respondents) / sum(students_per_group),
+                                mean(survey_data$score_percentage, na.rm = TRUE),
+                                sd(survey_data$score_percentage, na.rm = TRUE),
+                                sum(survey_data$gender == 1, na.rm = TRUE),
+                                sum(survey_data$gender == 2, na.rm = TRUE),
+                                sum(respondents) - sum(survey_data$gender == 1, na.rm = TRUE) -
+                                sum(survey_data$gender == 2, na.rm = TRUE)
+)
+
+score_percentages_means_sds <- paste(round(c(score_percentages_means_sorted[,2],mean(survey_data$score_percentage, na.rm = TRUE)), 2), 
+                                     "\u00B1", 
+                                     round(c(score_percentages_sds_sorted[,2],sd(survey_data$score_percentage, na.rm = TRUE)), 2)) # paste means +/- sds after rounding to 2 digits
+descriptive_df_processed <- descriptive_df[,-c(3,4)] # percentage means and sds converted to char and combined as mean +- sd
+descriptive_df_processed$means_and_sds <- score_percentages_means_sds
+descriptive_df_processed$response_rate <- round(descriptive_df_processed$response_rate, 2)
 
 ####### descriptive table of sample characteristics
 
-rownames(descriptive_df) <- c("seminar 2022", "lecture 2022", "seminar 2022/23", "lecture 2022/23", "seminar 2023")
+rownames(descriptive_df_processed) <- c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023", "Totals")
 
-descriptive_tbl <- as_tibble(cbind(nms = names(descriptive_df), t(descriptive_df))) # transpose and convert to tibble object
+descriptive_tbl <- as_tibble(cbind(nms = names(descriptive_df_processed), t(descriptive_df_processed))) # transpose and convert to tibble object
 
-row_names <- c("Respondents [n]", "Response rate [%]", "Male", "Female", "Non-binary or refused to disclose", "Mean percentage of correct anwers [%] \u00B1 standard deviation")
+row_names <- c("Respondents [n]", "Response rate [%]", "Male", "Female", "Non-binary or refused to disclose", "Mean percentage of correct anwers [%] \u00B1 standard deviation") # expressive row names esp. for gender options
 
 descriptive_tbl$nms = row_names # fill first column in descriptive_tbl with row names
 
@@ -53,6 +77,18 @@ descriptive_tbl_gt <- tab_stub_indent(descriptive_tbl_gt, rows= indented_rows, i
 descriptive_tbl_gt <- row_group_order(descriptive_tbl_gt, groups = c(NA, "Gender")) # reorder groups with Gender being on the bottom
 
 tab_header(descriptive_tbl_gt, "Subject characteristics")
+
+descriptive_tbl_gt <- tab_style( # make column total in bold
+  descriptive_tbl_gt,
+  style = cell_text(weight = "bold"),
+  locations = cells_body(columns = Totals)
+)
+
+descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
+  descriptive_tbl_gt,
+  style = cell_text(weight = "bold"),
+  locations = cells_column_labels(columns = Totals)
+)
 
 ###### line graph
 variables_of_interest <- c("group", "used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
