@@ -8,12 +8,14 @@ invisible(lapply(required_packages, library, character.only = TRUE))
 
 survey_data <- tibble(read_xlsx("data/processed/anki_data_comprehensive.xlsx")) # read survey data with all five groups
 
-####### create df structure for descriptive stats. Age is not yet analysed. Order of groups is: seminar 2022, lecture 2022, seminar 2022/23, lecture 2022/23, seminar 2023
+
+# create df structure for descriptive stats.  -----------------------------
+# Age is not yet analysed. Order of groups is: seminar 2022, lecture 2022, seminar 2022/23, lecture 2022/23, seminar 2023
 
 students_per_group <- c(196, 107, 111, 266, 232) # number of students who wrote the exam in each group (excluding students absent from the exam). Data taken from score reports for each exam.
 groups <- unique(survey_data$group) # vector of different groups
 
-respondents <- table(survey_data$group)[groups] # create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
+respondents <- table(survey_data$group) # before: ...[groups], but why? create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
 
 response_rate <-  round(100*respondents/students_per_group, 2) # create table of response rates in percentages
 
@@ -56,7 +58,8 @@ descriptive_df_processed <- descriptive_df[,-c(3,4)] # percentage means and sds 
 descriptive_df_processed$means_and_sds <- score_percentages_means_sds
 descriptive_df_processed$response_rate <- round(descriptive_df_processed$response_rate, 2)
 
-####### descriptive table of sample characteristics
+
+# descriptive table of sample characteristics. ----------------------------
 
 rownames(descriptive_df_processed) <- c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023", "Totals")
 
@@ -90,7 +93,9 @@ descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
   locations = cells_column_labels(columns = Totals)
 )
 
-###### line graph
+
+# line graph. ------------------------------------------------------------
+
 variables_of_interest <- c("group", "used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
                            "used_anki_institute", "used_anki_custom") # declare variables for line graph
 #options ignored: moodle quiz, moodle task, other
