@@ -15,7 +15,7 @@ survey_data <- tibble(read_xlsx("data/processed/anki_data_comprehensive.xlsx")) 
 students_per_group <- c(196, 107, 111, 266, 232) # number of students who wrote the exam in each group (excluding students absent from the exam). Data taken from score reports for each exam.
 groups <- unique(survey_data$group) # vector of different groups
 
-respondents <- table(survey_data$group) # before: ...[groups], but why? create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
+respondents <- table(survey_data$group)[groups] # create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
 
 response_rate <-  round(100*respondents/students_per_group, 2) # create table of response rates in percentages
 
@@ -100,6 +100,11 @@ variables_of_interest <- c("group", "used_script_digital", "used_script_physical
                            "used_anki_institute", "used_anki_custom") # declare variables for line graph
 #options ignored: moodle quiz, moodle task, other
 subset_of_interest <- survey_data[variables_of_interest]
+
+share_used_script_digital <- aggregate(used_script_digital ~ group, data=subset_of_interest, mean, na.rm = TRUE)[
+  match(groups, share_used_script_digital$group), 
+] # gives share of students who used physical scripts per group and in total
+
 
 frequency_tables <- frequency_table(survey_data, variables_of_interest) # create list of dataframes
 
