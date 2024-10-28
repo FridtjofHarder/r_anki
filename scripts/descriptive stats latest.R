@@ -1,5 +1,5 @@
 ####### install all required packages
-required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme")
+required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme", "reshape2")
 installed_packages <- required_packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(required_packages[!installed_packages])
@@ -113,15 +113,21 @@ for (i in 1:length(vector_of_methods)){ # fill df with shares of material used b
 }
 
 # convert data frame to long format to be usable in ggplot
-cbind(group = rownames(df_used_materials), df_used_materials) # create rownames as expressive data column
-reshape(df_used_materials, direction = "long"
+df_used_materials <- cbind(group = rownames(df_used_materials), df_used_materials) # create rownames as expressive data column
+df_used_materials_reshaped <- reshape(data = df_used_materials,
+        direction = "long",
+        varying = list(names(df_used_materials)[-1]),
+        idvar = names(df_used_materials)[1],
+        times = names(df_used_materials)[-1],
+        timevar = "method_used",
+        v.names = "share")
 
-
-figure <- ggplot(data=df_used_materials, aes(x=used_script_digital, y=percentages, group=study_material))
-
-figure +
-  geom_line(aes(linetype = study_material, color = study_material), linewidth = 2)+
-  geom_point(aes(color = study_material), size = 2)+
+figure <- ggplot(data=df_used_materials_reshaped, aes(x=group, y=share))
+figure + geom_point(aes(color = method_used), size = 2) + 
+  geom_line(aes(group = method_used))
+figure + geom_line(aes(color = method_used))
+  
+geom_point(aes(color = study_material), size = 2)+
   expand_limits(y = c(0, 100))+
   theme_bw()+
   labs(color  = "preferred study material", linetype = "preferred study material",
