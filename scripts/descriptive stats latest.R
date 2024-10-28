@@ -122,7 +122,7 @@ df_used_materials_reshaped <- reshape(data = df_used_materials,
         timevar = "method_used",
         v.names = "share")
 
-figure <- ggplot(data=df_used_materials_reshaped, aes(x=group, y=share))
+figure <- ggplot(data=df_used_materials_reshaped, aes(x=factor(group), y=share))
 figure + geom_point(aes(color = method_used), size = 2) + 
   geom_line(aes(group = method_used))
 figure + geom_line(aes(color = method_used))
