@@ -7,27 +7,28 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(required_packages, library, character.only = TRUE))
 
 survey_data <- tibble(read_xlsx("data/processed/anki_data_comprehensive.xlsx")) # read survey data with all five groups
+names(survey_data)[names(survey_data) == "group"] <- "exam" # rename "group" to "exam" to avoid collisions in ggplot2
 
 
 # create df structure for descriptive stats.  -----------------------------
 # Age is not yet analysed. Order of groups is: seminar 2022, lecture 2022, seminar 2022/23, lecture 2022/23, seminar 2023
 
 students_per_group <- c(196, 107, 111, 266, 232) # number of students who wrote the exam in each group (excluding students absent from the exam). Data taken from score reports for each exam.
-groups <- unique(survey_data$group) # vector of different groups
+groups <- unique(survey_data$exam) # vector of different groups
 
-respondents <- table(survey_data$group)[groups] # create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
+respondents <- table(survey_data$exam)[groups] # create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
 
 response_rate <-  round(100*respondents/students_per_group, 2) # create table of response rates in percentages
 
-gender_table <- table(survey_data$group, survey_data$gender)[groups,] # create table of declared gender per group (1 = male, 2 = female, 3 = diverse or not declared)
+gender_table <- table(survey_data$exam, survey_data$gender)[groups,] # create table of declared gender per group (1 = male, 2 = female, 3 = diverse or not declared)
 gender_undeclared <- respondents - rowSums(gender_table) # get no of students who did not declare gender in each group
 gender_table[,3] <- gender_table[,3] + gender_undeclared # add no of undeclared genders per group to gender table. row "3" now comprises both students of answered diverse, or who did not answer the question at all.
 
-score_percentages_means <- aggregate(score_percentage ~ group, data=survey_data, mean) # create df of mean score percentages by group
-score_percentages_means_sorted <- score_percentages_means[match(groups, score_percentages_means$group), ]
+score_percentages_means <- aggregate(score_percentage ~ exam, data=survey_data, mean) # create df of mean score percentages by group
+score_percentages_means_sorted <- score_percentages_means[match(groups, score_percentages_means$exam), ]
 
-score_percentages_sds <- aggregate(score_percentage ~ group, data=survey_data, sd) # create df of score percentage standard deviations by group
-score_percentages_sds_sorted <- score_percentages_sds[match(groups, score_percentages_sds$group), ]
+score_percentages_sds <- aggregate(score_percentage ~ exam, data=survey_data, sd) # create df of score percentage standard deviations by group
+score_percentages_sds_sorted <- score_percentages_sds[match(groups, score_percentages_sds$exam), ]
 
 score_percentages_means_sds <- paste(round(score_percentages_means_sorted[,2], 2), "\u00B1", round(score_percentages_sds_sorted[,2], 2)) # paste means +/- sds after rounding to 2 digits
 
@@ -84,7 +85,7 @@ tab_header(descriptive_tbl_gt, "Subject characteristics")
 descriptive_tbl_gt <- tab_style( # make column total in bold
   descriptive_tbl_gt,
   style = cell_text(weight = "bold"),
-  locations = cells_body(columns = Totals)
+  locations = cells_body(columns = "Totals")
 )
 
 descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
@@ -93,13 +94,14 @@ descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
   locations = cells_column_labels(columns = Totals)
 )
 
+descriptive_tbl_gt
 
 # line graph. ------------------------------------------------------------
 
 vector_of_methods <- c("used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
                            "used_anki_institute", "used_anki_custom") # declare variables for line graph
 #options ignored: moodle quiz, moodle task, other
-subset_of_interest <- survey_data[c("group", vector_of_methods)]
+subset_of_interest <- survey_data[c("exam", vector_of_methods)]
 
 df_used_materials <- as.data.frame(matrix(nrow = length(groups), ncol = length(vector_of_methods)))
 colnames(df_used_materials) <- vector_of_methods
@@ -107,13 +109,18 @@ rownames(df_used_materials) <- groups # creates df with columns for used studyin
 
 for (i in 1:length(vector_of_methods)){ # fill df with shares of material used by group
   method <- vector_of_methods[i]
-  share_used_method <- aggregate(get(vector_of_methods[i]) ~ group, data=subset_of_interest, mean, na.rm = TRUE) # gives share of students who used physical scripts per group and in total
-  share_used_method <- share_used_method[match(groups, share_used_method$group),] # sort by group
+  share_used_method <- aggregate(get(vector_of_methods[i]) ~ exam, data=subset_of_interest, mean, na.rm = TRUE) # gives share of students who used physical scripts per group and in total
+  share_used_method <- share_used_method[match(groups, share_used_method$exam),] # sort by group
   df_used_materials[,i] <- share_used_method[, 2]
 }
 
 # convert data frame to long format to be usable in ggplot
-df_used_materials <- cbind(group = rownames(df_used_materials), df_used_materials) # create rownames as expressive data column
+df_used_materials <- cbind(exam = rownames(df_used_materials), df_used_materials) # create rownames as expressive data column
+
+# rename methods for aesthetic plot labels
+colnames(df_used_materials) <- c(
+  "exam", "Digital script", "Physical script", "Textbooks", "Guidelines", "Anki institute cards", "Anki own cards")
+
 df_used_materials_reshaped <- reshape(data = df_used_materials,
         direction = "long",
         varying = list(names(df_used_materials)[-1]),
@@ -122,15 +129,21 @@ df_used_materials_reshaped <- reshape(data = df_used_materials,
         timevar = "method_used",
         v.names = "share")
 
-figure <- ggplot(data=df_used_materials_reshaped, aes(x=factor(group), y=share))
-figure + geom_point(aes(color = method_used), size = 2) + 
-  geom_line(aes(group = method_used))
-figure + geom_line(aes(color = method_used))
-  
+#plot 
+figure <- ggplot(data = df_used_materials_reshaped, 
+                 aes(x = exam, y = share, group = method_used, colour = method_used))
+figure + geom_point(aes(shape = method_used), size = 3) +
+  geom_line(aes(linetype = method_used), linewidth = 2, ) +
+  scale_x_discrete(limits = groups, name = "exam", 
+                   labels = c("Seminar 2022", "Lecture 22", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  scale_fill_discrete(name = "materials used", labels = c("A", "B", "C", "D", "E", "F")) +
+  labs(title = "study material used in each group")
+
 geom_point(aes(color = study_material), size = 2)+
   expand_limits(y = c(0, 100))+
   theme_bw()+
-  labs(color  = "preferred study material", linetype = "preferred study material",
+  labs(titlecolor  = "preferred study material", linetype = "preferred study material",
        x = "group", y = " Usage (% of students in each group)") +
   ggtitle("Preferred study material by group")
 ggsave(path = "H:/R/figures", filename= "preferred_study_material.png", device='png', dpi=700)
