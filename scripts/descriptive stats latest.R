@@ -133,12 +133,21 @@ df_used_materials_reshaped <- reshape(data = df_used_materials,
 figure <- ggplot(data = df_used_materials_reshaped, 
                  aes(x = exam, y = share, group = method_used, colour = method_used))
 figure + geom_point(aes(shape = method_used), size = 3) +
+
   geom_line(aes(linetype = method_used), linewidth = 2, ) +
   scale_x_discrete(limits = groups, name = "exam", 
                    labels = c("Seminar 2022", "Lecture 22", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
   scale_fill_discrete(name = "materials used", labels = c("A", "B", "C", "D", "E", "F")) +
   labs(title = "study material used in each group")
+
+  geom_line(aes(linetype = method_used), size = 2) +
+  scale_x_discrete(limits = groups, name = "exam", 
+                   labels = c("Seminar 2022", "Lecture 22", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+  theme_bw()
+
+figure + geom_line(aes(group = method_used))
 
 geom_point(aes(color = study_material), size = 2)+
   expand_limits(y = c(0, 100))+
@@ -149,8 +158,6 @@ geom_point(aes(color = study_material), size = 2)+
 ggsave(path = "H:/R/figures", filename= "preferred_study_material.png", device='png', dpi=700)
 
 ######## material considered helpful
-
-
 
 variables_of_interest_helpful <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
                                    "helpful_anki", "helpful_anki_custom", "helpful_all_equally")
