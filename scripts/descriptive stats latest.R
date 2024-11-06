@@ -1,4 +1,4 @@
-####### install all required packages
+# install all required packages ------------------------------------------------------------
 required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme", "reshape2")
 installed_packages <- required_packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
@@ -96,12 +96,12 @@ descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
 
 descriptive_tbl_gt
 
-# line graph. ------------------------------------------------------------
+# line graph of used methods. ------------------------------------------------------------
 
 vector_of_methods <- c("used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
                            "used_anki_institute", "used_anki_custom") # declare variables for line graph
 #options ignored: moodle quiz, moodle task, other
-subset_of_interest <- survey_data[c("exam", vector_of_methods)]
+subset_of_interest <- survey_data[c("exam", vector_of_methods)] # relevant subset of survey_data df
 
 df_used_materials <- as.data.frame(matrix(nrow = length(groups), ncol = length(vector_of_methods)))
 colnames(df_used_materials) <- vector_of_methods
@@ -136,33 +136,69 @@ figure + geom_point(aes(shape = method_used), size = 3) +
 
   geom_line(aes(linetype = method_used), linewidth = 2, ) +
   scale_x_discrete(limits = groups, name = "exam", 
-                   labels = c("Seminar 2022", "Lecture 22", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
+                   labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
-  scale_fill_discrete(name = "materials used", labels = c("A", "B", "C", "D", "E", "F")) +
-  labs(title = "study material used in each group")
+  theme_bw() +labs(title = "Methods used by group",
+                   color = "Methods used", 
+                   shape = "Methods used", 
+                   linetype = "Methods used",
+                   x = "Exam",
+                   y = "Share")
+  
+  # line graph of helpful. ------------------------------------------------------------
 
-  geom_line(aes(linetype = method_used), size = 2) +
-  scale_x_discrete(limits = groups, name = "exam", 
-                   labels = c("Seminar 2022", "Lecture 22", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
-  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
-  theme_bw()
-
-figure + geom_line(aes(group = method_used))
-
-geom_point(aes(color = study_material), size = 2)+
-  expand_limits(y = c(0, 100))+
-  theme_bw()+
-  labs(titlecolor  = "preferred study material", linetype = "preferred study material",
-       x = "group", y = " Usage (% of students in each group)") +
-  ggtitle("Preferred study material by group")
-ggsave(path = "H:/R/figures", filename= "preferred_study_material.png", device='png', dpi=700)
-
-######## material considered helpful
-
-variables_of_interest_helpful <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
-                                   "helpful_anki", "helpful_anki_custom", "helpful_all_equally")
+vector_of_helpful_methods <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
+                                   "helpful_anki_institute", "helpful_anki_custom", "helpful_all_equally")
 #options ignored: moodle quiz, moodle task
-frequency_tables_helpful <- frequency_table(survey_data, variables_of_interest_helpful)
+  
+subset_of_interest_helpful <- survey_data[c("exam", vector_of_helpful_methods)]  # relevant subset of survey_data df
+
+df_helpful_materials <- as.data.frame(matrix(nrow = length(groups), ncol = length(vector_of_helpful_methods)))
+colnames(df_helpful_materials) <- vector_of_helpful_methods
+rownames(df_helpful_materials) <- groups # creates df with columns for used studying methods and rows for groups
+ 
+for (i in 1:length(vector_of_helpful_methods)){ # fill df with shares of material used by group
+  method <- vector_of_helpful_methods[i]
+  share_helpful_method <- aggregate(get(vector_of_helpful_methods[i]) ~ exam, data=subset_of_interest_helpful, mean, na.rm = TRUE) # gives share of students who used physical scripts per group and in total
+  share_helpful_method <- share_helpful_method[match(groups, share_helpful_method$exam),] # sort by group
+  df_helpful_materials[,i] <- share_helpful_method[, 2]
+}
+
+# convert data frame to long format to be usable in ggplot
+df_helpful_materials <- cbind(exam = rownames(df_helpful_materials), df_helpful_materials) # create rownames as expressive data column
+
+# rename methods for aesthetic plot labels
+colnames(df_helpful_materials) <- c("exam", "Scripts", "Videos of lectures and seminars", 
+                                    "Live-streamed casts", "Contact events", "Anki institute cards", "Anki own cards", 
+                                    "All equally useful")
+
+df_helpful_materials_reshaped <- reshape(data = df_helpful_materials,
+                                      direction = "long",
+                                      varying = list(names(df_helpful_materials)[-1]),
+                                      idvar = names(df_helpful_materials)[1],
+                                      times = names(df_helpful_materials)[-1],
+                                      timevar = "method_helpful",
+                                      v.names = "share")
+
+figure <- ggplot(data = df_helpful_materials_reshaped, 
+                 aes(x = exam, y = share, group = method_helpful, colour = method_helpful))
+figure + geom_point(aes(shape = method_helpful), size = 3) +
+  
+  geom_line(aes(linetype = method_helpful), linewidth = 2, ) +
+  scale_x_discrete(limits = groups, name = "exam", 
+                   labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
+  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
+ 
+  theme_bw() +labs(title = "Methods considered useful by group",
+                   color = "Methods considered helpful", 
+                   shape = "Methods considered helpful", 
+                   linetype = "Methods considered helpful",
+                   x = "Exam",
+                   y = "Share")
+
+
+
+frequency_tabllabs()frequency_tables_helpful <- frequency_table(survey_data, variables_of_interest_helpful)
 list_of_percentages_helpful <- percentages(frequency_tables_helpful)
 
 percentages_of_study_material_helpful <- lapply(list_of_percentages_helpful,`[`,,"1") # unlist
