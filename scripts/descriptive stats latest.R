@@ -145,7 +145,7 @@ figure + geom_point(aes(shape = method_used), size = 3) +
                    x = "Exam",
                    y = "Share")
   
-  # line graph of helpful. ------------------------------------------------------------
+# line graph of helpful. ------------------------------------------------------------
 
 vector_of_helpful_methods <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
                                    "helpful_anki_institute", "helpful_anki_custom", "helpful_all_equally")
@@ -196,60 +196,15 @@ figure + geom_point(aes(shape = method_helpful), size = 3) +
                    x = "Exam",
                    y = "Share")
 
+# Anki considered helpful as percentage of users-------------------
 
+count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute == 1 & 
+                                                           survey_data$helpful_anki_institute == 1), 
+       group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
 
-frequency_tabllabs()frequency_tables_helpful <- frequency_table(survey_data, variables_of_interest_helpful)
-list_of_percentages_helpful <- percentages(frequency_tables_helpful)
-
-percentages_of_study_material_helpful <- lapply(list_of_percentages_helpful,`[`,,"1") # unlist
-
-df_of_percentages_helpful <- do.call(data.frame, percentages_of_study_material_helpful) # transform to df with study materials in cols and groups in rows
-colnames(df_of_percentages_helpful) <- variables_of_interest_helpful # name cols after study material
-df_of_percentages_helpful$groups <- row.names(df_of_percentages_helpful) # transform row names to column
-
-df_reshaped_helpful <- reshape(df_of_percentages_helpful, dir = "long", idvar = "groups", varying = variables_of_interest_helpful, v.names = "percentages", 
-                       times = variables_of_interest_helpful, timevar = "study_material")
-relocate(df_reshaped_helpful, study_material)
-
-df_reshaped_helpful$groups <- factor(df_reshaped_helpful$groups, levels = unique(df_reshaped_helpful$groups), ordered = T)
-
-df_reshaped_helpful_for_plot <- df_reshaped_helpful # prepare for renaming
-
-
-
-df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_script"] <- "script" # rename for plot legend
-df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_video"] <- "video"
-df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_streaming"] <- "streaming"
-df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_contact_event"] <- "contact event"
-df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_anki_general"] <- "institute Anki decks"
-df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_anki_custom"] <- "Anki decks created by student"
-df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_all_equally"] <- "all equally helpful"
-
-df_reshaped_helpful_for_plot$study_material <- factor(df_reshaped_helpful_for_plot$study_material, 
-                                              levels = unique(df_reshaped_helpful_for_plot$study_material), ordered = T)
-
-figure <- ggplot(data=df_reshaped_helpful_for_plot, aes(x=as.factor(groups), y=percentages, group=study_material))
-
-figure +
-  geom_line(aes(linetype = study_material, color = study_material), linewidth = 2)+
-  geom_point(aes(color = study_material), size = 2)+
-  expand_limits(y = c(0, 100))+
-  theme_bw()+
-  labs(color  = "study material considered especially helpful", linetype = "study material considered especially helpful",
-       x = "group", y = " considered especially helpful (% of students in each group)") +
-  ggtitle("Study material considered especially helpful by group")
-
-ggsave(path = "H:/R/figures", filename= "helpful_material.png", device='png', dpi=700)
-####### Anki considered helpful as percentage of users
-
-
-count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_general == 1 & 
-                                                           survey_data$helpful_anki_general == 1), 
-       group = factor(survey_data$group, levels = unique(survey_data$group)), na.rm = T)
-
-count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_general == 1 & 
-                                                           survey_data$helpful_anki_general == 2), 
-                                              group = factor(survey_data$group, levels = unique(survey_data$group)), na.rm = T)
+count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute == 1 & 
+                                                           survey_data$helpful_anki_institute == 2), 
+       group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
 
 count_either_helpful_and_used_general <- count_anki_helpful_and_used_general+
   count_anki_not_helpful_and_used_general
