@@ -1,3 +1,17 @@
+# ToDo:
+# Introduction
+# Methods
+# Results
+# Discussion
+# Descriptive Stats
+# Regression, controlling for factors?
+#
+#
+#
+#
+#
+#
+
 # install all required packages ------------------------------------------------------------
 required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme", "reshape2")
 installed_packages <- required_packages %in% rownames(installed.packages())
@@ -37,10 +51,6 @@ descriptive_df <- data.frame(respondents = as.vector(respondents), # create data
                                  score_percentages_means = score_percentages_means_sorted[, 2],
                                  score_percentages_sds = score_percentages_sds_sorted[, 2],
                                  as.data.frame.matrix(gender_table))
-# descriptive_matrix <- data.frame(cbind(respondents, response_rate = response_rate, gender_table, score_percentages_means_sds = score_percentages_means_sds)) # combine to table with all descriptive stats
-# descriptive_matrix_df <- cbind.data.frame([respondents = respondents, response_rate = response_rate, gender_table, score_percentages_means_sds = score_percentages_means_sds], make.row.names = FALSE) # combine to table with all descriptive stats
-# descriptive_df <- data.frame(descriptive_matrix) # convert matrix to df
-# descriptive_df["totals", 1] <- sum(descriptive_df[, "respondents"])
 
 descriptive_df["totals", ] <- c(sum(respondents), # add bottom row with totals over all seminar and lecture exams
                                 100 * sum(respondents) / sum(students_per_group),
@@ -129,13 +139,26 @@ df_used_materials_reshaped <- reshape(data = df_used_materials,
         timevar = "method_used",
         v.names = "share")
 
-#plot 
+#plot
+#define colors
+cols <- c("Digital script" = "red", "Physical script" = "blue",
+          "Textbooks" = "green","Guidelines" = "yellow", 
+          "Anki institute cards" = "black", "Anki own cards" = "orange")
+#define shape
+shapes <- c("Digital script" = 15, "Physical script" = 16,
+            "Textbooks" = 17,"Guidelines" = 18, 
+            "Anki institute cards" = 8, "Anki own cards" = 3)
+#define linetype
+linetypes <- c("Digital script" = "solid", "Physical script" = "dashed",
+            "Textbooks" = "dotted","Guidelines" = "dotdash", 
+            "Anki institute cards" = "longdash", "Anki own cards" = "twodash")
+  
 figure <- ggplot(data = df_used_materials_reshaped, 
                  aes(x = exam, y = share, group = method_used, colour = method_used))
 figure + geom_point(aes(shape = method_used), size = 3) +
 
-  geom_line(aes(linetype = method_used), linewidth = 2, ) +
-  scale_x_discrete(limits = groups, name = "exam", 
+  geom_line(aes(linetype = method_used), linewidth = 1, ) +
+  scale_x_discrete(limits = groups, name = "Exam", 
                    labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
   theme_bw() +labs(title = "Methods used by group",
@@ -143,9 +166,15 @@ figure + geom_point(aes(shape = method_used), size = 3) +
                    shape = "Methods used", 
                    linetype = "Methods used",
                    x = "Exam",
-                   y = "Share")
-  
+                   y = "Share") + 
+  scale_colour_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  scale_linetype_manual(values = linetypes)
+
 # line graph of helpful. ------------------------------------------------------------
+
+# vector_of_methods <- c("used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
+# "used_anki_institute", "used_anki_custom")
 
 vector_of_helpful_methods <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
                                    "helpful_anki_institute", "helpful_anki_custom", "helpful_all_equally")
@@ -180,53 +209,96 @@ df_helpful_materials_reshaped <- reshape(data = df_helpful_materials,
                                       timevar = "method_helpful",
                                       v.names = "share")
 
+df_helpful_materials_reshaped[is.na(df_helpful_materials_reshaped)] <- 0 # just for testing, delete when done
+
+#define colors
+cols <- c("Scripts" = "red", "Videos of lectures and seminars" = "blue",
+          "Live-streamed casts" = "green","Contact events" = "yellow", 
+          "Anki institute cards" = "black", "Anki own cards" = "orange",
+          "All equally useful" = "cyan")
+#define shape
+shapes <- c("Scripts" = 15, "Videos of lectures and seminars" = 16,
+            "Live-streamed casts" = 17,"Contact events" = 18, 
+            "Anki institute cards" = 8, "Anki own cards" = 3,
+            "All equally useful" = 3)
+#define linetype
+linetypes <- c("Scripts" = "solid", "Videos of lectures and seminars" = "dashed",
+               "Live-streamed casts" = "dotted","Contact events" = "dotdash", 
+               "Anki institute cards" = "longdash", "Anki own cards" = "twodash",
+               "All equally useful" = 11)
+
 figure <- ggplot(data = df_helpful_materials_reshaped, 
                  aes(x = exam, y = share, group = method_helpful, colour = method_helpful))
-figure + geom_point(aes(shape = method_helpful), size = 3) +
-  
-  geom_line(aes(linetype = method_helpful), linewidth = 2, ) +
-  scale_x_discrete(limits = groups, name = "exam", 
+figure + geom_point(aes(shape = method_helpful), size = 3, na.rm = TRUE) +
+  geom_line(aes(linetype = method_helpful), linewidth = 1, ) +
+  scale_x_discrete(limits = groups, name = "Exam", 
                    labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
- 
   theme_bw() +labs(title = "Methods considered useful by group",
                    color = "Methods considered helpful", 
                    shape = "Methods considered helpful", 
                    linetype = "Methods considered helpful",
                    x = "Exam",
-                   y = "Share")
+                   y = "Share") + 
+  scale_colour_manual(values = cols) +
+  scale_shape_manual(values = shapes) +
+  scale_linetype_manual(values = linetypes)
 
 # Anki considered helpful as percentage of users-------------------
 
-count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute == 1 & 
-                                                           survey_data$helpful_anki_institute == 1), 
+# count all who responded positively to Q5 and Q6
+count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
+                                                           survey_data$helpful_anki_institute_general == 1), 
        group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
 
-count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute == 1 & 
-                                                           survey_data$helpful_anki_institute == 2), 
-       group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
+# count all who responded positively to Q5 and negatively to Q6
+count_anki_helpful_but_not_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
+                                                           survey_data$helpful_anki_institute_general == 2), 
+                                              group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
 
-count_either_helpful_and_used_general <- count_anki_helpful_and_used_general+
-  count_anki_not_helpful_and_used_general
+# count all who responded positively to Q5 and gave any response to Q6
+count_responded_to_question <- count_anki_helpful_and_used_general + count_anki_helpful_but_not_used_general
 
-percent_anki_helpful <- 100*count_anki_helpful_and_used_general/count_either_helpful_and_used_general
+# discard "seminar_22" since question not contained in their survey
+percent_anki_helpful <- 100*count_anki_helpful_and_used_general[-1,]/count_responded_to_question[-1,]
 
-df_percent_anki_helpful <- data.frame(groups = factor(row.names(percent_anki_helpful), levels = row.names(percent_anki_helpful)), 
+df_percent_anki_helpful <- data.frame(groups = factor(names(percent_anki_helpful), levels = names(percent_anki_helpful)), 
                                       percentage = percent_anki_helpful,
                                       row.names = NULL)
   
 figure <- ggplot(data=df_percent_anki_helpful, aes(x=as.factor(groups), y=percentage)) + 
   geom_line(aes(group = 1)) +
-  geom_point() +
-  labs(x= "group", y = "% of Anki users who considered the cards helpful") +
+  geom_point(size = 3) +
+  labs(x= "Exam", y = "% of Anki users who considered the cards helpful") + # actually it is % of users who answered the question on whether the cards were helpful
   ggtitle("Students who considered Anki cards helpful relative to number of users by group") +
   theme_bw()+
-  expand_limits(y = c(NA, 100))
+  expand_limits(y = c(0, 100))+
+  scale_x_discrete(limits = groups[-1], name = "Exam", 
+                   labels = c("Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023"))
+figure
 ggsave(path = "H:/R/figures", filename= "share_anki_helpful.png", device='png', dpi=700)
 
-survey_data_boxplot <- survey_data
-survey_data_boxplot$used_anki[survey_data_boxplot$used_anki == 0] <- "did not study with Anki"
-survey_data_boxplot$used_anki[survey_data_boxplot$used_anki == 1] <- "studied with Anki" 
+# boxplots of exam scores
+
+boxplot_data <- survey_data[survey_data$exam != "seminar_22",]
+
+
+
+ggplot(data = subset(boxplot_data, !is.na(used_anki_institute_general)),
+       aes(x = exam, y=score_percentage, fill = factor(used_anki_institute_general)), na.rm = TRUE) + 
+  geom_boxplot()
+# create a data frame
+
+
+
+variety=rep(LETTERS[1:7], each=40)
+treatment=rep(c("high","low"),each=20)
+note=seq(1:280)+sample(1:150, 280, replace=T)
+data=data.frame(variety, treatment ,  note)
+
+# grouped boxplot
+ggplot(data, aes(x=variety, y=note, fill=treatment)) + 
+  geom_boxplot()
 
 ggplot(data = survey_data_boxplot, aes(x=factor(group, levels = unique(group)), y=100*score_percentage, fill=as.factor(used_anki))) + 
   geom_boxplot() +
