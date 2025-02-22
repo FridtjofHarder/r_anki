@@ -1,6 +1,6 @@
-# install all required packages ------------------------------------------------------------
-required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme", "reshape2",
-                       "svglite")
+####### install all required packages
+required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme","webshot2",
+                       "htmltools")
 installed_packages <- required_packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(required_packages[!installed_packages])
@@ -8,28 +8,27 @@ if (any(installed_packages == FALSE)) {
 invisible(lapply(required_packages, library, character.only = TRUE))
 
 survey_data <- tibble(read_xlsx("data/processed/anki_data_comprehensive.xlsx")) # read survey data with all five groups
-names(survey_data)[names(survey_data) == "group"] <- "exam" # rename "group" to "exam" to avoid collisions in ggplot2
 
 
 # create df structure for descriptive stats.  -----------------------------
 # Age is not yet analysed. Order of groups is: seminar 2022, lecture 2022, seminar 2022/23, lecture 2022/23, seminar 2023
 
 students_per_group <- c(196, 107, 111, 266, 232) # number of students who wrote the exam in each group (excluding students absent from the exam). Data taken from score reports for each exam.
-groups <- unique(survey_data$exam) # vector of different groups
+groups <- unique(survey_data$group) # vector of different groups
 
-respondents <- table(survey_data$exam)[groups] # create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
+respondents <- table(survey_data$group)[groups] # create table of group frequencies and sort them by vector "groups". Otherwise, columns will be sorted by alphabet
 
 response_rate <-  round(100*respondents/students_per_group, 2) # create table of response rates in percentages
 
-gender_table <- table(survey_data$exam, survey_data$gender)[groups,] # create table of declared gender per group (1 = male, 2 = female, 3 = diverse or not declared)
+gender_table <- table(survey_data$group, survey_data$gender)[groups,] # create table of declared gender per group (1 = male, 2 = female, 3 = diverse or not declared)
 gender_undeclared <- respondents - rowSums(gender_table) # get no of students who did not declare gender in each group
 gender_table[,3] <- gender_table[,3] + gender_undeclared # add no of undeclared genders per group to gender table. row "3" now comprises both students of answered diverse, or who did not answer the question at all.
 
-score_percentages_means <- aggregate(score_percentage ~ exam, data=survey_data, mean) # create df of mean score percentages by group
-score_percentages_means_sorted <- score_percentages_means[match(groups, score_percentages_means$exam), ]
+score_percentages_means <- aggregate(score_percentage ~ group, data=survey_data, mean) # create df of mean score percentages by group
+score_percentages_means_sorted <- score_percentages_means[match(groups, score_percentages_means$group), ]
 
-score_percentages_sds <- aggregate(score_percentage ~ exam, data=survey_data, sd) # create df of score percentage standard deviations by group
-score_percentages_sds_sorted <- score_percentages_sds[match(groups, score_percentages_sds$exam), ]
+score_percentages_sds <- aggregate(score_percentage ~ group, data=survey_data, sd) # create df of score percentage standard deviations by group
+score_percentages_sds_sorted <- score_percentages_sds[match(groups, score_percentages_sds$group), ]
 
 score_percentages_means_sds <- paste(round(score_percentages_means_sorted[,2], 2), "\u00B1", round(score_percentages_sds_sorted[,2], 2)) # paste means +/- sds after rounding to 2 digits
 
@@ -86,7 +85,7 @@ tab_header(descriptive_tbl_gt, "Subject characteristics")
 descriptive_tbl_gt <- tab_style( # make column total in bold
   descriptive_tbl_gt,
   style = cell_text(weight = "bold"),
-  locations = cells_body(columns = "Totals")
+  locations = cells_body(columns = Totals)
 )
 
 descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
@@ -95,181 +94,139 @@ descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
   locations = cells_column_labels(columns = Totals)
 )
 
-descriptive_tbl_gt
+# save table as vectorized pdf
 
 gtsave(descriptive_tbl_gt, "output/descriptive_stats.pdf")
 
-# line graph of used methods. ------------------------------------------------------------
+# line graph. ------------------------------------------------------------
 
-vector_of_methods <- c("used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
+variables_of_interest <- c("group", "used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
                            "used_anki_institute", "used_anki_custom") # declare variables for line graph
 #options ignored: moodle quiz, moodle task, other
-subset_of_interest <- survey_data[c("exam", vector_of_methods)] # relevant subset of survey_data df
+subset_of_interest <- survey_data[variables_of_interest]
 
-df_used_materials <- as.data.frame(matrix(nrow = length(groups), ncol = length(vector_of_methods)))
-colnames(df_used_materials) <- vector_of_methods
-rownames(df_used_materials) <- groups # creates df with columns for used studying methods and rows for groups
+share_used_script_digital <- aggregate(used_script_digital ~ group, data=subset_of_interest, mean, na.rm = TRUE)
+share_used_script_digita_sorted <- share_used_script_digital[match(groups, share_used_script_digital$group),]
 
-for (i in 1:length(vector_of_methods)){ # fill df with shares of material used by group
-  method <- vector_of_methods[i]
-  share_used_method <- aggregate(get(vector_of_methods[i]) ~ exam, data=subset_of_interest, mean, na.rm = TRUE) # gives share of students who used physical scripts per group and in total
-  share_used_method <- share_used_method[match(groups, share_used_method$exam),] # sort by group
-  df_used_materials[,i] <- share_used_method[, 2]
-}
+match(groups, share_used_script_digital$group)
+ # gives share of students who used physical scripts per group and in total
 
-# convert data frame to long format to be usable in ggplot
-df_used_materials <- cbind(exam = rownames(df_used_materials), df_used_materials) # create rownames as expressive data column
 
-# rename methods for aesthetic plot labels
-colnames(df_used_materials) <- c(
-  "exam", "Digital script", "Physical script", "Textbooks", "Guidelines", "Anki institute cards", "Anki own cards")
+frequency_tables <- frequency_table(survey_data, variables_of_interest) # create list of dataframes
 
-df_used_materials_reshaped <- reshape(data = df_used_materials,
-        direction = "long",
-        varying = list(names(df_used_materials)[-1]),
-        idvar = names(df_used_materials)[1],
-        times = names(df_used_materials)[-1],
-        timevar = "method_used",
-        v.names = "share")
+list_of_percentages <- percentages(frequency_tables) # creates list of percentages for study material
 
-#plot 
-figure <- ggplot(data = df_used_materials_reshaped, 
-                 aes(x = exam, y = share, group = method_used, colour = method_used))
-figure + geom_point(aes(shape = method_used), size = 3) +
+percentages_of_study_material <- lapply(list_of_percentages,`[`,,"1") # unlist
 
-  geom_line(aes(linetype = method_used), linewidth = 2, ) +
-  scale_x_discrete(limits = groups, name = "Exam", 
-                   labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
-  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
-                     labels = scales::percent_format(accuracy = 1),
-                     expand = c(0,0)) +
-  theme_bw() +labs(title = "Methods used by group",
-                   color = "Methods used", 
-                   shape = "Methods used", 
-                   linetype = "Methods used",
-                   x = "Exam",
-                   y = "Share [%]")
+df_of_percentages <- do.call(data.frame, percentages_of_study_material) # transform to df with study materials in cols and groups in rows
+colnames(df_of_percentages) <- variables_of_interest # name cols after study material
+df_of_percentages$groups <- row.names(df_of_percentages) # transform row names to column
 
-ggsave("output/plot_used_methods.svg")
+df_reshaped <- reshape(df_of_percentages, dir = "long", idvar = "groups", varying = variables_of_interest, v.names = "percentages", 
+                       times = variables_of_interest, timevar = "study_material")
+relocate(df_reshaped, study_material)
 
-# line graph of helpful. ------------------------------------------------------------
+df_reshaped$groups <- factor(df_reshaped$groups, levels = unique(df_reshaped$groups), ordered = T)
 
-vector_of_helpful_methods <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
-                                   "helpful_anki_institute", "helpful_anki_custom", "helpful_all_equally")
+df_reshaped_for_plot <- df_reshaped # prepare for renaming
+
+df_reshaped_for_plot$study_material[df_reshaped_for_plot$study_material == "used_script_digital"] <- "digital script" # rename for plot legend
+df_reshaped_for_plot$study_material[df_reshaped_for_plot$study_material == "used_script_physical"] <- "physical script"
+df_reshaped_for_plot$study_material[df_reshaped_for_plot$study_material == "used_textbook"] <- "textbook"
+df_reshaped_for_plot$study_material[df_reshaped_for_plot$study_material == "used_guideline"] <- "guidelines"
+df_reshaped_for_plot$study_material[df_reshaped_for_plot$study_material == "used_anki"] <- "institute Anki decks"
+df_reshaped_for_plot$study_material[df_reshaped_for_plot$study_material == "used_custom_anki"] <- "Anki decks created by student"
+
+df_reshaped_for_plot$study_material <- factor(df_reshaped_for_plot$study_material, 
+                                              levels = unique(df_reshaped_for_plot$study_material), ordered = T)
+
+figure <- ggplot(data=df_reshaped_for_plot, aes(x=as.factor(groups), y=percentages, group=study_material))
+
+figure +
+  geom_line(aes(linetype = study_material, color = study_material), linewidth = 2)+
+  geom_point(aes(color = study_material), size = 2)+
+  expand_limits(y = c(0, 100))+
+  theme_bw()+
+  labs(color  = "preferred study material", linetype = "preferred study material",
+       x = "group", y = " Usage (% of students in each group)") +
+  ggtitle("Preferred study material by group")
+ggsave(path = "H:/R/figures", filename= "preferred_study_material.png", device='png', dpi=700)
+
+######## material considered helpful
+
+variables_of_interest_helpful <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
+                                   "helpful_anki", "helpful_anki_custom", "helpful_all_equally")
 #options ignored: moodle quiz, moodle task
+frequency_tables_helpful <- frequency_table(survey_data, variables_of_interest_helpful)
+list_of_percentages_helpful <- percentages(frequency_tables_helpful)
+
+percentages_of_study_material_helpful <- lapply(list_of_percentages_helpful,`[`,,"1") # unlist
+
+df_of_percentages_helpful <- do.call(data.frame, percentages_of_study_material_helpful) # transform to df with study materials in cols and groups in rows
+colnames(df_of_percentages_helpful) <- variables_of_interest_helpful # name cols after study material
+df_of_percentages_helpful$groups <- row.names(df_of_percentages_helpful) # transform row names to column
+
+df_reshaped_helpful <- reshape(df_of_percentages_helpful, dir = "long", idvar = "groups", varying = variables_of_interest_helpful, v.names = "percentages", 
+                       times = variables_of_interest_helpful, timevar = "study_material")
+relocate(df_reshaped_helpful, study_material)
+
+df_reshaped_helpful$groups <- factor(df_reshaped_helpful$groups, levels = unique(df_reshaped_helpful$groups), ordered = T)
+
+df_reshaped_helpful_for_plot <- df_reshaped_helpful # prepare for renaming
+
+
+
+df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_script"] <- "script" # rename for plot legend
+df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_video"] <- "video"
+df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_streaming"] <- "streaming"
+df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_contact_event"] <- "contact event"
+df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_anki_general"] <- "institute Anki decks"
+df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_anki_custom"] <- "Anki decks created by student"
+df_reshaped_helpful_for_plot$study_material[df_reshaped_helpful_for_plot$study_material == "helpful_all_equally"] <- "all equally helpful"
+
+df_reshaped_helpful_for_plot$study_material <- factor(df_reshaped_helpful_for_plot$study_material, 
+                                              levels = unique(df_reshaped_helpful_for_plot$study_material), ordered = T)
+
+figure <- ggplot(data=df_reshaped_helpful_for_plot, aes(x=as.factor(groups), y=percentages, group=study_material))
+
+figure +
+  geom_line(aes(linetype = study_material, color = study_material), linewidth = 2)+
+  geom_point(aes(color = study_material), size = 2)+
+  expand_limits(y = c(0, 100))+
+  theme_bw()+
+  labs(color  = "study material considered especially helpful", linetype = "study material considered especially helpful",
+       x = "group", y = " considered especially helpful (% of students in each group)") +
+  ggtitle("Study material considered especially helpful by group")
+
+ggsave(path = "H:/R/figures", filename= "helpful_material.png", device='png', dpi=700)
+####### Anki considered helpful as percentage of users
+
+
+count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_general == 1 & 
+                                                           survey_data$helpful_anki_general == 1), 
+       group = factor(survey_data$group, levels = unique(survey_data$group)), na.rm = T)
+
+count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_general == 1 & 
+                                                           survey_data$helpful_anki_general == 2), 
+                                              group = factor(survey_data$group, levels = unique(survey_data$group)), na.rm = T)
+
+count_either_helpful_and_used_general <- count_anki_helpful_and_used_general+
+  count_anki_not_helpful_and_used_general
+
+percent_anki_helpful <- 100*count_anki_helpful_and_used_general/count_either_helpful_and_used_general
+
+df_percent_anki_helpful <- data.frame(groups = factor(row.names(percent_anki_helpful), levels = row.names(percent_anki_helpful)), 
+                                      percentage = percent_anki_helpful,
+                                      row.names = NULL)
   
-subset_of_interest_helpful <- survey_data[c("exam", vector_of_helpful_methods)]  # relevant subset of survey_data df
-
-df_helpful_materials <- as.data.frame(matrix(nrow = length(groups), ncol = length(vector_of_helpful_methods)))
-colnames(df_helpful_materials) <- vector_of_helpful_methods
-rownames(df_helpful_materials) <- groups # creates df with columns for used studying methods and rows for groups
- 
-for (i in 1:length(vector_of_helpful_methods)){ # fill df with shares of material used by group
-  method <- vector_of_helpful_methods[i]
-  share_helpful_method <- aggregate(get(vector_of_helpful_methods[i]) ~ exam, data=subset_of_interest_helpful, mean, na.rm = TRUE) # gives share of students who used physical scripts per group and in total
-  share_helpful_method <- share_helpful_method[match(groups, share_helpful_method$exam),] # sort by group
-  df_helpful_materials[,i] <- share_helpful_method[, 2]
-}
-
-# convert data frame to long format to be usable in ggplot
-df_helpful_materials <- cbind(exam = rownames(df_helpful_materials), df_helpful_materials) # create rownames as expressive data column
-
-# rename methods for aesthetic plot labels
-colnames(df_helpful_materials) <- c("exam", "Scripts", "Videos of lectures and seminars", 
-                                    "Live-streamed casts", "Contact events", "Anki institute cards", "Anki own cards", 
-                                    "All equally useful")
-
-df_helpful_materials_reshaped <- reshape(data = df_helpful_materials,
-                                      direction = "long",
-                                      varying = list(names(df_helpful_materials)[-1]),
-                                      idvar = names(df_helpful_materials)[1],
-                                      times = names(df_helpful_materials)[-1],
-                                      timevar = "method_helpful",
-                                      v.names = "share")
-
-figure <- ggplot(data = df_helpful_materials_reshaped, 
-                 aes(x = exam, y = share, group = method_helpful, colour = method_helpful))
-figure + geom_point(aes(shape = method_helpful), size = 3) +
-  
-  geom_line(aes(linetype = method_helpful), linewidth = 2, ) +
-  scale_x_discrete(limits = groups, name = "Exam", 
-                   labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
-  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
-                     labels = scales::percent_format(accuracy = 1),
-                     expand = c(0,0)) +
- 
-  theme_bw() +labs(title = "Methods considered useful by group",
-                   color = "Methods considered helpful", 
-                   shape = "Methods considered helpful", 
-                   linetype = "Methods considered helpful",
-                   x = "Exam",
-                   y = "Share")
-
-
-
-ggsave("output/plot_helpful_methods.svg")
-
-# Anki considered helpful as percentage of users-------------------
-
-count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
-                                                           survey_data$helpful_anki_institute_general == 1), 
-       group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
-
-count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
-                                                           survey_data$helpful_anki_institute_general == 2), 
-                                              group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
-
-count_anki_used_but_helpful_unknown <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
-                                                           is.na(survey_data$helpful_anki_institute_general)), 
-                                              group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
-
-count_used_anki <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1), 
-                          group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
-
-df_anki_helpful <- data.frame("Considered_helpful" = count_anki_helpful_and_used_general,
-                              "Not_considered_helpful" = count_anki_not_helpful_and_used_general,
-                              "No_answer" = count_anki_used_but_helpful_unknown,
-                              "total" = count_used_anki)
-
-# convert to shares
-df_anki_helpful_shares <- df_anki_helpful[-ncol(df_anki_helpful)]/df_anki_helpful$total
-
-colnames(df_anki_helpful_shares) <-  c("Considered helpful", 
-                                       "Not considered helpful",
-                                       "No answer")
-
-df_filtered <- df_anki_helpful_shares[-1, , drop = FALSE]
-df_filtered$Group <- rownames(df_filtered)
-df_long <- data.frame(
-  Group = rep(df_filtered$Group, times = 3),
-  Response = rep(colnames(df_filtered)[1:3], each = nrow(df_filtered)), 
-  Share = c(df_filtered$"Considered helpful", df_filtered$"Not considered helpful", df_filtered$"No answer")
-)
-##
-df_long$Response <- factor(df_long$Response, levels = c(
-  "No answer",       # Bottom
-  "Not considered helpful",   # Middle
-  "Considered helpful"                 # Top
-))
-
-ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
-  geom_col() +  # Stacked bars
-  scale_y_continuous(labels = scales::percent_format(accuracy = 1),
-                     limits = c(0, 1), expand = c(0, 0),
-                     breaks = seq(0, 1, 0.2)) +  # Convert to %
-  scale_x_discrete(limits = groups[-1], name = "Exam", 
-                   labels = c("Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
-  labs(title = "Acceptance of Anki institute deck among users", 
-       x = "Exam", y = "Percentage", fill = "Response") +
-  scale_fill_manual(values = c("gray95", "gray70", "gray20")) +
-  theme_classic()
-
-ggsave("output/plot_percentage_anki_helpful.svg")
-
-
-
-
-ggsave("output/plot_methods.svg")
+figure <- ggplot(data=df_percent_anki_helpful, aes(x=as.factor(groups), y=percentage)) + 
+  geom_line(aes(group = 1)) +
+  geom_point() +
+  labs(x= "group", y = "% of Anki users who considered the cards helpful") +
+  ggtitle("Students who considered Anki cards helpful relative to number of users by group") +
+  theme_bw()+
+  expand_limits(y = c(NA, 100))
+ggsave(path = "H:/R/figures", filename= "share_anki_helpful.png", device='png', dpi=700)
 
 survey_data_boxplot <- survey_data
 survey_data_boxplot$used_anki[survey_data_boxplot$used_anki == 0] <- "did not study with Anki"

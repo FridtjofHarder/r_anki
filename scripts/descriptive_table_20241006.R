@@ -1,5 +1,6 @@
 ####### install all required packages
-required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme")
+required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme","webshot2",
+                       "htmltools")
 installed_packages <- required_packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(required_packages[!installed_packages])
@@ -93,6 +94,9 @@ descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
   locations = cells_column_labels(columns = Totals)
 )
 
+# save table as vectorized pdf
+
+gtsave(descriptive_tbl_gt, "output/descriptive_stats.pdf")
 
 # line graph. ------------------------------------------------------------
 
@@ -101,9 +105,9 @@ variables_of_interest <- c("group", "used_script_digital", "used_script_physical
 #options ignored: moodle quiz, moodle task, other
 subset_of_interest <- survey_data[variables_of_interest]
 
-share_used_script_digital <- aggregate(used_script_digital ~ group, data=subset_of_interest, mean, na.rm = TRUE)[
-  match(groups, share_used_script_digital$group), 
-] # gives share of students who used physical scripts per group and in total
+share_used_script_digital <- aggregate(used_script_digital ~ group, data=subset_of_interest, mean, na.rm = TRUE)
+share_used_script_digita_sorted <- share_used_script_digital[match(groups, share_used_script_digital$group),]
+ # gives share of students who used digital scripts per group and in total
 
 
 frequency_tables <- frequency_table(survey_data, variables_of_interest) # create list of dataframes
