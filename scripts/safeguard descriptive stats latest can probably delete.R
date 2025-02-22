@@ -277,15 +277,12 @@ ggsave("output/plot_helpful_methods.svg")
 
 # Anki considered helpful as percentage of users-------------------
 
-<<<<<<< HEAD
-=======
 # count all who responded positively to Q5 and Q6
->>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
+
 count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
                                                            survey_data$helpful_anki_institute_general == 1), 
        group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
 
-<<<<<<< HEAD
 count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
                                                            survey_data$helpful_anki_institute_general == 2), 
                                               group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
@@ -341,34 +338,6 @@ ggsave("output/plot_percentage_anki_helpful.svg")
 
 
 ggsave("output/plot_methods.svg")
-=======
-# count all who responded positively to Q5 and negatively to Q6
-count_anki_helpful_but_not_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
-                                                           survey_data$helpful_anki_institute_general == 2), 
-                                              group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
-
-# count all who responded positively to Q5 and gave any response to Q6
-count_responded_to_question <- count_anki_helpful_and_used_general + count_anki_helpful_but_not_used_general
-
-# discard "seminar_22" since question not contained in their survey
-percent_anki_helpful <- 100*count_anki_helpful_and_used_general[-1,]/count_responded_to_question[-1,]
-
-df_percent_anki_helpful <- data.frame(groups = factor(names(percent_anki_helpful), levels = names(percent_anki_helpful)), 
-                                      percentage = percent_anki_helpful,
-                                      row.names = NULL)
-  
-figure <- ggplot(data=df_percent_anki_helpful, aes(x=as.factor(groups), y=percentage)) + 
-  geom_line(aes(group = 1)) +
-  geom_point(size = 3) +
-  labs(x= "Exam", y = "% of Anki users who considered the cards helpful") + # actually it is % of users who answered the question on whether the cards were helpful
-  ggtitle("Students who considered Anki cards helpful relative to number of users by group") +
-  theme_bw()+
-  expand_limits(y = c(0, 100))+
-  scale_x_discrete(limits = groups[-1], name = "Exam", 
-                   labels = c("Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023"))
-figure
-ggsave(path = "H:/R/figures", filename= "share_anki_helpful.png", device='png', dpi=700)
->>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
 
 # boxplots of exam scores
 

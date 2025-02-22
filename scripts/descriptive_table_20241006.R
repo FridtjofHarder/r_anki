@@ -107,7 +107,13 @@ subset_of_interest <- survey_data[variables_of_interest]
 
 share_used_script_digital <- aggregate(used_script_digital ~ group, data=subset_of_interest, mean, na.rm = TRUE)
 share_used_script_digita_sorted <- share_used_script_digital[match(groups, share_used_script_digital$group),]
+<<<<<<< HEAD
  # gives share of students who used digital scripts per group and in total
+=======
+
+match(groups, share_used_script_digital$group)
+ # gives share of students who used physical scripts per group and in total
+>>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
 
 
 frequency_tables <- frequency_table(survey_data, variables_of_interest) # create list of dataframes
