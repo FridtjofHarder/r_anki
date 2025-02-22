@@ -334,16 +334,11 @@ ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
 
 ggsave("output/plot_percentage_anki_helpful.svg")
 
-
-
-
 ggsave("output/plot_methods.svg")
 
 # boxplots of exam scores
 
 boxplot_data <- survey_data[survey_data$exam != "seminar_22",]
-
-
 
 ggplot(data = subset(boxplot_data, !is.na(used_anki_institute_general)),
        aes(x = exam, y=score_percentage, fill = factor(used_anki_institute_general)), na.rm = TRUE) + 
