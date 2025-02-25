@@ -5,16 +5,10 @@
 # Discussion
 # Descriptive Stats
 # Regression, controlling for factors?
-#
-#
-#
-#
-#
-#
 
 # install all required packages ------------------------------------------------------------
 required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme", "reshape2",
-                       "svglite")
+                       "svglite", "webshot2")
 installed_packages <- required_packages %in% rownames(installed.packages())
 if (any(installed_packages == FALSE)) {
   install.packages(required_packages[!installed_packages])
@@ -160,11 +154,8 @@ figure <- ggplot(data = df_used_materials_reshaped,
                  aes(x = exam, y = share, group = method_used, colour = method_used))
 figure + geom_point(aes(shape = method_used), size = 3) +
 
-<<<<<<< HEAD
   geom_line(aes(linetype = method_used), linewidth = 2, ) +
-=======
-  geom_line(aes(linetype = method_used), linewidth = 1, ) +
->>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
+
   scale_x_discrete(limits = groups, name = "Exam", 
                    labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
@@ -175,21 +166,12 @@ figure + geom_point(aes(shape = method_used), size = 3) +
                    shape = "Methods used", 
                    linetype = "Methods used",
                    x = "Exam",
-<<<<<<< HEAD
+
                    y = "Share [%]")
 
 ggsave("output/plot_used_methods.svg")
-=======
-                   y = "Share") + 
-  scale_colour_manual(values = cols) +
-  scale_shape_manual(values = shapes) +
-  scale_linetype_manual(values = linetypes)
->>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
 
-# line graph of helpful. ------------------------------------------------------------
-
-# vector_of_methods <- c("used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
-# "used_anki_institute", "used_anki_custom")
+# line graph of helpful methods. ------------------------------------------------------------
 
 vector_of_helpful_methods <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
                                    "helpful_anki_institute", "helpful_anki_custom", "helpful_all_equally")
@@ -244,7 +226,7 @@ linetypes <- c("Scripts" = "solid", "Videos of lectures and seminars" = "dashed"
 
 figure <- ggplot(data = df_helpful_materials_reshaped, 
                  aes(x = exam, y = share, group = method_helpful, colour = method_helpful))
-<<<<<<< HEAD
+
 figure + geom_point(aes(shape = method_helpful), size = 3) +
   
   geom_line(aes(linetype = method_helpful), linewidth = 2, ) +
@@ -254,13 +236,6 @@ figure + geom_point(aes(shape = method_helpful), size = 3) +
                      labels = scales::percent_format(accuracy = 1),
                      expand = c(0,0)) +
  
-=======
-figure + geom_point(aes(shape = method_helpful), size = 3, na.rm = TRUE) +
-  geom_line(aes(linetype = method_helpful), linewidth = 1, ) +
-  scale_x_discrete(limits = groups, name = "Exam", 
-                   labels = c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
-  scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2)) +
->>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
   theme_bw() +labs(title = "Methods considered useful by group",
                    color = "Methods considered helpful", 
                    shape = "Methods considered helpful", 
@@ -271,21 +246,10 @@ figure + geom_point(aes(shape = method_helpful), size = 3, na.rm = TRUE) +
   scale_shape_manual(values = shapes) +
   scale_linetype_manual(values = linetypes)
 
-
-
 ggsave("output/plot_helpful_methods.svg")
 
 # Anki considered helpful as percentage of users-------------------
 
-<<<<<<< HEAD
-=======
-# count all who responded positively to Q5 and Q6
->>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
-count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
-                                                           survey_data$helpful_anki_institute_general == 1), 
-       group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
-
-<<<<<<< HEAD
 count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
                                                            survey_data$helpful_anki_institute_general == 2), 
                                               group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
@@ -336,39 +300,6 @@ ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
   theme_classic()
 
 ggsave("output/plot_percentage_anki_helpful.svg")
-
-
-
-
-ggsave("output/plot_methods.svg")
-=======
-# count all who responded positively to Q5 and negatively to Q6
-count_anki_helpful_but_not_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
-                                                           survey_data$helpful_anki_institute_general == 2), 
-                                              group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
-
-# count all who responded positively to Q5 and gave any response to Q6
-count_responded_to_question <- count_anki_helpful_and_used_general + count_anki_helpful_but_not_used_general
-
-# discard "seminar_22" since question not contained in their survey
-percent_anki_helpful <- 100*count_anki_helpful_and_used_general[-1,]/count_responded_to_question[-1,]
-
-df_percent_anki_helpful <- data.frame(groups = factor(names(percent_anki_helpful), levels = names(percent_anki_helpful)), 
-                                      percentage = percent_anki_helpful,
-                                      row.names = NULL)
-  
-figure <- ggplot(data=df_percent_anki_helpful, aes(x=as.factor(groups), y=percentage)) + 
-  geom_line(aes(group = 1)) +
-  geom_point(size = 3) +
-  labs(x= "Exam", y = "% of Anki users who considered the cards helpful") + # actually it is % of users who answered the question on whether the cards were helpful
-  ggtitle("Students who considered Anki cards helpful relative to number of users by group") +
-  theme_bw()+
-  expand_limits(y = c(0, 100))+
-  scale_x_discrete(limits = groups[-1], name = "Exam", 
-                   labels = c("Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023"))
-figure
-ggsave(path = "H:/R/figures", filename= "share_anki_helpful.png", device='png', dpi=700)
->>>>>>> 4f9ec581cb8c8cbe19b149ebdce3e946fa5a5617
 
 # boxplots of exam scores
 
