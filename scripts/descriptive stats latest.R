@@ -248,7 +248,7 @@ figure + geom_point(aes(shape = method_helpful), size = 3) +
 
 ggsave("output/plot_helpful_methods.svg")
 
-# Anki considered helpful as percentage of users-------------------
+# Anki considered helpful as percentage of users--------------------------------
 
 count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
                                                            survey_data$helpful_anki_institute_general == 2), 
@@ -301,18 +301,14 @@ ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
 
 ggsave("output/plot_percentage_anki_helpful.svg")
 
-# boxplots of exam scores
+# boxplots of exam scores ------------------------------------------------------
 
 boxplot_data <- survey_data[survey_data$exam != "seminar_22",]
-
-
 
 ggplot(data = subset(boxplot_data, !is.na(used_anki_institute_general)),
        aes(x = exam, y=score_percentage, fill = factor(used_anki_institute_general)), na.rm = TRUE) + 
   geom_boxplot()
 # create a data frame
-
-
 
 variety=rep(LETTERS[1:7], each=40)
 treatment=rep(c("high","low"),each=20)
@@ -323,7 +319,7 @@ data=data.frame(variety, treatment ,  note)
 ggplot(data, aes(x=variety, y=note, fill=treatment)) + 
   geom_boxplot()
 
-ggplot(data = survey_data_boxplot, aes(x=factor(group, levels = unique(group)), y=100*score_percentage, fill=as.factor(used_anki))) + 
+ggplot(data = boxplot_data, aes(x=factor(group, levels = unique(group)), y=100*score_percentage, fill=as.factor(used_anki))) + 
   geom_boxplot() +
   labs(fill = " ", x = "group", y = "correct exam questions (%)", title = "% of correct exam questions depending on group and Anki usage") +
   geom_line() +
