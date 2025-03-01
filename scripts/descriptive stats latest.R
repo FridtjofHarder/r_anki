@@ -101,7 +101,7 @@ descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
 
 descriptive_tbl_gt
 
-gtsave(descriptive_tbl_gt, "output/descriptive_stats.pdf")
+# gtsave(descriptive_tbl_gt, "output/descriptive_stats.pdf") decomment when you want to save
 
 # line graph of used methods. ------------------------------------------------------------
 
@@ -169,7 +169,7 @@ figure + geom_point(aes(shape = method_used), size = 3) +
 
                    y = "Share [%]")
 
-ggsave("output/plot_used_methods.svg")
+# ggsave("output/plot_used_methods.svg") decomment when you want to save
 
 # line graph of helpful methods. ------------------------------------------------------------
 
