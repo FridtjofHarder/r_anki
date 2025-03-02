@@ -206,8 +206,6 @@ df_helpful_materials_reshaped <- reshape(data = df_helpful_materials,
                                       timevar = "method_helpful",
                                       v.names = "share")
 
-df_helpful_materials_reshaped[is.na(df_helpful_materials_reshaped)] <- 0 # just for testing, delete when done
-
 #define colors
 cols <- c("Scripts" = "red", "Videos of lectures and seminars" = "blue",
           "Live-streamed casts" = "green","Contact events" = "yellow", 
@@ -246,9 +244,13 @@ figure + geom_point(aes(shape = method_helpful), size = 3) +
   scale_shape_manual(values = shapes) +
   scale_linetype_manual(values = linetypes)
 
-ggsave("output/plot_helpful_methods.svg")
+# ggsave("output/plot_helpful_methods.svg") decomment if desired to save
 
 # Anki considered helpful as percentage of users--------------------------------
+
+count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
+                                                               survey_data$helpful_anki_institute_general == 1), 
+                                                  group = factor(survey_data$exam, levels = unique(survey_data$exam)), na.rm = T)
 
 count_anki_not_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
                                                            survey_data$helpful_anki_institute_general == 2), 
@@ -273,27 +275,37 @@ colnames(df_anki_helpful_shares) <-  c("Considered helpful",
                                        "Not considered helpful",
                                        "No answer")
 
-df_filtered <- df_anki_helpful_shares[-1, , drop = FALSE]
+df_filtered <- df_anki_helpful_shares[-1, , drop = FALSE] # remove seminar_22 since no data on Anki usage had been collected
 df_filtered$Group <- rownames(df_filtered)
+# transform to long
 df_long <- data.frame(
   Group = rep(df_filtered$Group, times = 3),
   Response = rep(colnames(df_filtered)[1:3], each = nrow(df_filtered)), 
   Share = c(df_filtered$"Considered helpful", df_filtered$"Not considered helpful", df_filtered$"No answer")
 )
-##
+#factorize answers
 df_long$Response <- factor(df_long$Response, levels = c(
   "No answer",       # Bottom
   "Not considered helpful",   # Middle
   "Considered helpful"                 # Top
 ))
 
+sample_sizes <-  rep(100, 4)
 ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
   geom_col() +  # Stacked bars
   scale_y_continuous(labels = scales::percent_format(accuracy = 1),
                      limits = c(0, 1), expand = c(0, 0),
                      breaks = seq(0, 1, 0.2)) +  # Convert to %
-  scale_x_discrete(limits = groups[-1], name = "Exam", 
-                   labels = c("Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023")) + 
+  scale_x_discrete(
+    limits = groups[-1], 
+    name = "Exam", 
+    labels = c(
+      paste0("Lecture 2022\nn = ", df_anki_helpful$total[2]),
+      paste0("Seminar 2022/23\nn = ", df_anki_helpful$total[3]),
+      paste0("Lecture 2022/23\nn = ", df_anki_helpful$total[4]),
+      paste0("Seminar 2023\nn = ", df_anki_helpful$total[5])
+    )
+  ) +
   labs(title = "Acceptance of Anki institute deck among users", 
        x = "Exam", y = "Percentage", fill = "Response") +
   scale_fill_manual(values = c("gray95", "gray70", "gray20")) +
