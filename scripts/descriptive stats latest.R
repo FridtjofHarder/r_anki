@@ -311,40 +311,49 @@ ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
   scale_fill_manual(values = c("gray95", "gray70", "gray20")) +
   theme_classic()
 
-ggsave("output/plot_percentage_anki_helpful.svg")
+# ggsave("output/plot_percentage_anki_helpful.svg") decomment if desired to save figure
 
 # boxplots of exam scores ------------------------------------------------------
 
 boxplot_data <- survey_data[survey_data$exam != "seminar_22",]
+# select subset with only defined anki usage and score percentages. Scores of 0 were exluded.
+boxplot_subset <- subset(boxplot_data, subset = 
+                           !is.na(used_anki_institute_general) &
+                           !is.na(score_percentage) &
+                           score_percentage > 0)
 
-ggplot(data = subset(boxplot_data, !is.na(used_anki_institute_general)),
+# factorize groups
+boxplot_subset$exam <- factor(boxplot_subset$exam , 
+                              levels =unique(boxplot_subset$exam))
+ggplot(data =boxplot_subset,
        aes(x = exam, y=score_percentage, fill = factor(used_anki_institute_general)), na.rm = TRUE) + 
-  geom_boxplot()
-# create a data frame
+  geom_boxplot () +
+  labs(title = "Exam score percentages among Anki users and non-users", 
+       x = "Exam", y = "Exam score percentages", fill = "Used Anki institute cards") +
+  scale_x_discrete(
+    labels = c(
+      paste0("Lecture 2022"),
+      paste0("Seminar 2022/23"),
+      paste0("Lecture 2022/23"),
+      paste0("Seminar 2023")
+    )) + 
+  scale_fill_discrete(labels = c("yes", "no")) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"))
 
-variety=rep(LETTERS[1:7], each=40)
-treatment=rep(c("high","low"),each=20)
-note=seq(1:280)+sample(1:150, 280, replace=T)
-data=data.frame(variety, treatment ,  note)
+ggsave("output/Anki_usage_over_score_percentage.svg", 
+       width = 30, height = 20)
 
-# grouped boxplot
-ggplot(data, aes(x=variety, y=note, fill=treatment)) + 
-  geom_boxplot()
+# t-tests and multiple Regression ----------------------------------------------
+inference_stat_subset <- boxplot_subset # subset with rows removed if anki_used_general is NA or score_percentage is NA or 0
 
-ggplot(data = boxplot_data, aes(x=factor(group, levels = unique(group)), y=100*score_percentage, fill=as.factor(used_anki))) + 
-  geom_boxplot() +
-  labs(fill = " ", x = "group", y = "correct exam questions (%)", title = "% of correct exam questions depending on group and Anki usage") +
-  geom_line() +
-  theme_bw()
-ggsave(path = "H:/R/figures", filename= "exam scores and Anki usage.png", device='png', dpi=700)
-
-##### t-tests and multiple Regression
-p_values_t_test <- rep(NA, length(unique(survey_data$group)))
-mean_difference <- rep(NA, length(unique(survey_data$group)))
+p_values_t_test <- rep(NA, length(unique(survey_data$exam)))
+mean_difference <- rep(NA, length(unique(survey_data$exam)))
 
 for(i in 1:length(unique(survey_data$group))){
-  p_values_t_test[i] <-t.test(score_percentage ~ used_anki, data = survey_data[survey_data$group == groups[i],])$p.value
-  mean_difference[i] <- diff(t.test(score_percentage ~ used_anki, data = survey_data[survey_data$group == groups[i],])$estimate)
+  p_values_t_test[i] <- t.test(score_percentage ~ used_anki_institute_general, 
+                               data = inference_stat_subset)$p.value
+  mean_difference[i] <- diff(t.test(score_percentage ~ used_anki_institute_general, 
+                                    data = inference_stat_subset)$estimate)
 }
 
 p_values_tbble <- as_tibble(data.frame(groups, round(p_values_t_test, 2), round(100*mean_difference, 2)))
@@ -433,4 +442,6 @@ figure +
   ggtitle("Reasons for not using Anki cards")
 
 ggsave(path = "H:/R/figures", filename= "reason_not_used.png", device='png', dpi=700)
+
+test_data <- data.frame(first = c(1, NA, 1), second = c(1, 1, NA), third = c(1,1,1)
 
