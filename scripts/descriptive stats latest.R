@@ -101,7 +101,7 @@ descriptive_tbl_gt <- tab_style( # make column name "Totals" in bold as well
 
 descriptive_tbl_gt
 
-# gtsave(descriptive_tbl_gt, "output/descriptive_stats.pdf") decomment when you want to save
+# gtsave(descriptive_tbl_gt, "output/descriptive_stats.pdf") # decomment when you want to save
 
 # line graph of used methods. ------------------------------------------------------------
 
@@ -126,7 +126,7 @@ df_used_materials <- cbind(exam = rownames(df_used_materials), df_used_materials
 
 # rename methods for aesthetic plot labels
 colnames(df_used_materials) <- c(
-  "exam", "Digital script", "Physical script", "Textbooks", "Guidelines", "Anki institute cards", "Anki own cards")
+  "exam", "Digital script", "Physical script", "Textbooks", "Guidelines", "Anki (institute cards)", "Anki (own cards)")
 
 df_used_materials_reshaped <- reshape(data = df_used_materials,
         direction = "long",
@@ -140,15 +140,15 @@ df_used_materials_reshaped <- reshape(data = df_used_materials,
 #define colors
 cols <- c("Digital script" = "red", "Physical script" = "blue",
           "Textbooks" = "green","Guidelines" = "yellow", 
-          "Anki institute cards" = "black", "Anki own cards" = "orange")
+          "Anki (institute cards)" = "black", "Anki (own cards)" = "orange")
 #define shape
 shapes <- c("Digital script" = 15, "Physical script" = 16,
             "Textbooks" = 17,"Guidelines" = 18, 
-            "Anki institute cards" = 8, "Anki own cards" = 3)
+            "Anki (institute cards)" = 8, "Anki (own cards)" = 3)
 #define linetype
 linetypes <- c("Digital script" = "solid", "Physical script" = "dashed",
             "Textbooks" = "dotted","Guidelines" = "dotdash", 
-            "Anki institute cards" = "longdash", "Anki own cards" = "twodash")
+            "Anki (institute cards)" = "longdash", "Anki (own cards)" = "twodash")
   
 figure <- ggplot(data = df_used_materials_reshaped, 
                  aes(x = exam, y = share, group = method_used, colour = method_used))
@@ -161,7 +161,7 @@ figure + geom_point(aes(shape = method_used), size = 3) +
   scale_y_continuous(limits = c(0, 1), breaks = seq(0, 1, 0.2),
                      labels = scales::percent_format(accuracy = 1),
                      expand = c(0,0)) +
-  theme_bw() +labs(title = "Methods used by group",
+  theme_bw() +labs(title = "Methods used for exam preparation",
                    color = "Methods used", 
                    shape = "Methods used", 
                    linetype = "Methods used",
@@ -169,7 +169,7 @@ figure + geom_point(aes(shape = method_used), size = 3) +
 
                    y = "Share [%]")
 
-# ggsave("output/plot_used_methods.svg") decomment when you want to save
+ggsave("output/plot_used_methods.svg", width = 10, height = 5) # decomment when you want to save
 
 # line graph of helpful methods. ------------------------------------------------------------
 
@@ -195,7 +195,7 @@ df_helpful_materials <- cbind(exam = rownames(df_helpful_materials), df_helpful_
 
 # rename methods for aesthetic plot labels
 colnames(df_helpful_materials) <- c("exam", "Scripts", "Videos of lectures and seminars", 
-                                    "Live-streamed casts", "Contact events", "Anki institute cards", "Anki own cards", 
+                                    "Live-streamed casts", "Contact events", "Anki (institute cards)", "Anki (own cards)", 
                                     "All equally useful")
 
 df_helpful_materials_reshaped <- reshape(data = df_helpful_materials,
@@ -209,17 +209,17 @@ df_helpful_materials_reshaped <- reshape(data = df_helpful_materials,
 #define colors
 cols <- c("Scripts" = "red", "Videos of lectures and seminars" = "blue",
           "Live-streamed casts" = "green","Contact events" = "yellow", 
-          "Anki institute cards" = "black", "Anki own cards" = "orange",
+          "Anki (institute cards)" = "black", "Anki (own cards)" = "orange",
           "All equally useful" = "cyan")
 #define shape
 shapes <- c("Scripts" = 15, "Videos of lectures and seminars" = 16,
             "Live-streamed casts" = 17,"Contact events" = 18, 
-            "Anki institute cards" = 8, "Anki own cards" = 3,
+            "Anki (institute cards)" = 8, "Anki (own cards)" = 3,
             "All equally useful" = 3)
 #define linetype
 linetypes <- c("Scripts" = "solid", "Videos of lectures and seminars" = "dashed",
                "Live-streamed casts" = "dotted","Contact events" = "dotdash", 
-               "Anki institute cards" = "longdash", "Anki own cards" = "twodash",
+               "Anki (institute cards)" = "longdash", "Anki (own cards)" = "twodash",
                "All equally useful" = 11)
 
 figure <- ggplot(data = df_helpful_materials_reshaped, 
@@ -234,7 +234,7 @@ figure + geom_point(aes(shape = method_helpful), size = 3) +
                      labels = scales::percent_format(accuracy = 1),
                      expand = c(0,0)) +
  
-  theme_bw() +labs(title = "Methods considered useful by group",
+  theme_bw() +labs(title = "Methods considered helpful for exam preparation",
                    color = "Methods considered helpful", 
                    shape = "Methods considered helpful", 
                    linetype = "Methods considered helpful",
@@ -244,7 +244,7 @@ figure + geom_point(aes(shape = method_helpful), size = 3) +
   scale_shape_manual(values = shapes) +
   scale_linetype_manual(values = linetypes)
 
-# ggsave("output/plot_helpful_methods.svg") decomment if desired to save
+ggsave("output/plot_helpful_methods.svg", width = 10, height = 5) # decomment if desired to save
 
 # Anki considered helpful as percentage of users--------------------------------
 
@@ -311,13 +311,43 @@ ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
   scale_fill_manual(values = c("gray95", "gray70", "gray20")) +
   theme_classic()
 
-# ggsave("output/plot_percentage_anki_helpful.svg") decomment if desired to save figure
+ggsave("output/plot_percentage_anki_helpful.svg", width = 10, height = 5) # decomment if desired to save figure
 
 # boxplots of exam scores ------------------------------------------------------
 
-boxplot_data <- survey_data[survey_data$exam != "seminar_22",]
 # select subset with only defined anki usage and score percentages. Scores of 0 were exluded.
-boxplot_subset <- subset(boxplot_data, subset = 
+boxplot_subset <- subset(survey_data, subset = 
+                           !is.na(used_anki_institute) &
+                           !is.na(score_percentage) &
+                           score_percentage > 0)
+
+# factorize groups
+boxplot_subset$exam <- factor(boxplot_subset$exam , 
+                              levels =unique(boxplot_subset$exam))
+ggplot(data =boxplot_subset,
+       aes(x = exam, y=score_percentage, fill = factor(used_anki_institute)), na.rm = TRUE) + 
+  geom_boxplot () +
+  labs(title = "Exam score percentages among Anki users and non-users", 
+       x = "Exam", y = "Exam score percentages", fill = "Used Anki institute cards") +
+  scale_x_discrete(
+    labels = c(
+      paste0("Seminar 2022"),
+      paste0("Lecture 2022"),
+      paste0("Seminar 2022/23"),
+      paste0("Lecture 2022/23"),
+      paste0("Seminar 2023")
+    )) + 
+  scale_fill_discrete(labels = c("yes", "no")) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"),
+                     limits = c(0, 100),
+                     expand = c(0,0))
+
+ggsave("output/Anki_score_percentage_over_usage_and_exam.svg", 
+       width = 8, height = 4)
+
+# bloxplots when asked for used Anki institute general
+
+boxplot_subset <- subset(survey_data, subset = 
                            !is.na(used_anki_institute_general) &
                            !is.na(score_percentage) &
                            score_percentage > 0)
@@ -326,22 +356,26 @@ boxplot_subset <- subset(boxplot_data, subset =
 boxplot_subset$exam <- factor(boxplot_subset$exam , 
                               levels =unique(boxplot_subset$exam))
 ggplot(data =boxplot_subset,
-       aes(x = exam, y=score_percentage, fill = factor(used_anki_institute_general)), na.rm = TRUE) + 
+       aes(x = exam, y=score_percentage, fill = factor(used_anki_institute)), na.rm = TRUE) + 
   geom_boxplot () +
   labs(title = "Exam score percentages among Anki users and non-users", 
        x = "Exam", y = "Exam score percentages", fill = "Used Anki institute cards") +
   scale_x_discrete(
     labels = c(
+      paste0("Seminar 2022"),
       paste0("Lecture 2022"),
       paste0("Seminar 2022/23"),
       paste0("Lecture 2022/23"),
       paste0("Seminar 2023")
     )) + 
-  scale_fill_discrete(labels = c("yes", "no")) +
-  scale_y_continuous(labels = function(x) paste0(x, "%"))
+  scale_fill_discrete(labels = c("1" = "yes", "0" = "no")) +
+  scale_y_continuous(labels = function(x) paste0(x, "%"),
+                     limits = c(0, 100),
+                     expand = c(0,0))
 
-ggsave("output/Anki_usage_over_score_percentage.svg", 
-       width = 30, height = 20)
+ggsave("output/Anki_score_percentage_over_usage_and_exam.svg", 
+       width = 8, height = 6)
+
 
 # t-tests and multiple Regression ----------------------------------------------
 inference_stat_subset <- boxplot_subset # subset with rows removed if anki_used_general is NA or score_percentage is NA or 0
