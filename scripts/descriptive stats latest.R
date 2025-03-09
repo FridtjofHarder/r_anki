@@ -6,7 +6,7 @@
 # Descriptive Stats
 # Regression, controlling for factors?
 
-# install all required packages ------------------------------------------------------------
+#### install all required packages ------------------------------------------------------------
 required_packages <- c("gt", "readxl","tidyverse", "grDevices", "ggpubr", "effsize", "superb", "nlme", "reshape2",
                        "svglite", "webshot2")
 installed_packages <- required_packages %in% rownames(installed.packages())
@@ -19,7 +19,7 @@ survey_data <- tibble(read_xlsx("data/processed/anki_data_comprehensive.xlsx")) 
 names(survey_data)[names(survey_data) == "group"] <- "exam" # rename "group" to "exam" to avoid collisions in ggplot2
 
 
-# create df structure for descriptive stats.  -----------------------------
+#### create df structure for descriptive stats.  -----------------------------------------
 # Age is not yet analysed. Order of groups is: seminar 2022, lecture 2022, seminar 2022/23, lecture 2022/23, seminar 2023
 
 students_per_group <- c(196, 107, 111, 266, 232) # number of students who wrote the exam in each group (excluding students absent from the exam). Data taken from score reports for each exam.
@@ -65,7 +65,7 @@ descriptive_df_processed$means_and_sds <- score_percentages_means_sds
 descriptive_df_processed$response_rate <- round(descriptive_df_processed$response_rate, 2)
 
 
-# descriptive table of sample characteristics. ----------------------------
+#### descriptive table of sample characteristics. ------------------------------------
 
 rownames(descriptive_df_processed) <- c("Seminar 2022", "Lecture 2022", "Seminar 2022/23", "Lecture 2022/23", "Seminar 2023", "Totals")
 
@@ -103,7 +103,7 @@ descriptive_tbl_gt
 
 # gtsave(descriptive_tbl_gt, "output/descriptive_stats.pdf") # decomment when you want to save
 
-# line graph of used methods. ------------------------------------------------------------
+#### line graph of used methods. ------------------------------------------------------------
 
 vector_of_methods <- c("used_script_digital", "used_script_physical", "used_textbook", "used_guideline",
                            "used_anki_institute", "used_anki_custom") # declare variables for line graph
@@ -171,7 +171,7 @@ figure + geom_point(aes(shape = method_used), size = 3) +
 
 ggsave("output/plot_used_methods.svg", width = 10, height = 5) # decomment when you want to save
 
-# line graph of helpful methods. ------------------------------------------------------------
+#### line graph of helpful methods. ------------------------------------------------------------
 
 vector_of_helpful_methods <- c("helpful_script", "helpful_video", "helpful_streaming", "helpful_contact_event",
                                    "helpful_anki_institute", "helpful_anki_custom", "helpful_all_equally")
@@ -246,7 +246,7 @@ figure + geom_point(aes(shape = method_helpful), size = 3) +
 
 ggsave("output/plot_helpful_methods.svg", width = 10, height = 5) # decomment if desired to save
 
-# Anki considered helpful as percentage of users--------------------------------
+#### Anki considered helpful as percentage of users--------------------------------
 
 count_anki_helpful_and_used_general <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1 & 
                                                                survey_data$helpful_anki_institute_general == 1), 
@@ -313,22 +313,24 @@ ggplot(df_long, aes(x = Group, y = Share, fill = Response)) +
 
 ggsave("output/plot_percentage_anki_helpful.svg", width = 10, height = 5) # decomment if desired to save figure
 
-# boxplots of exam scores ------------------------------------------------------
+#### boxplots of exam scores using anki in multiple choice ("used anki institute")----------------------
 
 # select subset with only defined anki usage and score percentages. Scores of 0 were exluded.
-boxplot_subset <- subset(survey_data, subset = 
+boxplot_subset_mc <- subset(survey_data, subset = 
                            !is.na(used_anki_institute) &
                            !is.na(score_percentage) &
                            score_percentage > 0)
 
 # factorize groups
-boxplot_subset$exam <- factor(boxplot_subset$exam , 
-                              levels =unique(boxplot_subset$exam))
-ggplot(data =boxplot_subset,
-       aes(x = exam, y=score_percentage, fill = factor(used_anki_institute)), na.rm = TRUE) + 
+boxplot_subset_mc$exam <- factor(boxplot_subset_mc$exam , 
+                              levels =unique(boxplot_subset_mc$exam))
+ggplot(data =boxplot_subset_mc,
+       aes(x = exam, y=score_percentage, 
+           fill = factor(used_anki_institute, levels = c(1, 0))), na.rm = TRUE) + 
   geom_boxplot () +
   labs(title = "Exam score percentages among Anki users and non-users", 
-       x = "Exam", y = "Exam score percentages", fill = "Used Anki institute cards") +
+       x = "Exam", y = "Exam score percentages", 
+       fill = "Used Anki institute cards, \nitem no. 2.1 (multiplce-choice question)") +
   scale_x_discrete(
     labels = c(
       paste0("Seminar 2022"),
@@ -337,47 +339,153 @@ ggplot(data =boxplot_subset,
       paste0("Lecture 2022/23"),
       paste0("Seminar 2023")
     )) + 
-  scale_fill_discrete(labels = c("yes", "no")) +
+  scale_fill_manual(labels = c("0" = "no", "1" = "yes"),
+                      values = c("0" = "#DDAA33", "1" = "#004488")) +
   scale_y_continuous(labels = function(x) paste0(x, "%"),
                      limits = c(0, 100),
-                     expand = c(0,0))
+                     expand = c(0,0),
+                     breaks = seq(0, 100, 10))
 
-ggsave("output/Anki_score_percentage_over_usage_and_exam.svg", 
+ggsave("output/Anki_score_percentage_over_usage_and_exam_mc.svg", 
        width = 8, height = 4)
 
-# bloxplots when asked for used Anki institute general
+#### boxplots of exam scores using anki in binary question ("used anki institute general")----------------------
 
-boxplot_subset <- subset(survey_data, subset = 
+boxplot_subset_binary <- subset(survey_data, subset = 
                            !is.na(used_anki_institute_general) &
                            !is.na(score_percentage) &
                            score_percentage > 0)
 
 # factorize groups
-boxplot_subset$exam <- factor(boxplot_subset$exam , 
-                              levels =unique(boxplot_subset$exam))
-ggplot(data =boxplot_subset,
-       aes(x = exam, y=score_percentage, fill = factor(used_anki_institute)), na.rm = TRUE) + 
+boxplot_subset_binary$exam <- factor(boxplot_subset_binary$exam , 
+                              levels =unique(boxplot_subset_binary$exam))
+ggplot(data =boxplot_subset_binary,
+       aes(x = exam, y=score_percentage, fill = factor(used_anki_institute_general)), na.rm = TRUE) + 
   geom_boxplot () +
   labs(title = "Exam score percentages among Anki users and non-users", 
-       x = "Exam", y = "Exam score percentages", fill = "Used Anki institute cards") +
+       x = "Exam", y = "Exam score percentages", 
+       fill = "Used Anki institute cards, \nitem no. 2.5 (binary question)") +
   scale_x_discrete(
     labels = c(
-      paste0("Seminar 2022"),
       paste0("Lecture 2022"),
       paste0("Seminar 2022/23"),
       paste0("Lecture 2022/23"),
       paste0("Seminar 2023")
     )) + 
-  scale_fill_discrete(labels = c("1" = "yes", "0" = "no")) +
+  scale_fill_manual(labels = c("1" = "yes", "2" = "no"),
+                      values = c("2" = "#DDAA33", "1" = "#004488")) +
   scale_y_continuous(labels = function(x) paste0(x, "%"),
                      limits = c(0, 100),
-                     expand = c(0,0))
+                     expand = c(0,0),
+                     breaks = seq(0, 100, 10))
 
-ggsave("output/Anki_score_percentage_over_usage_and_exam.svg", 
+ggsave("output/Anki_score_percentage_over_usage_and_exam_binary.svg", 
        width = 8, height = 6)
 
+#### table indicating discrepancies between item 2.1 and item 5 ----------------
 
-# t-tests and multiple Regression ----------------------------------------------
+# for either one answered with "yes"
+q_2_yes <- rowsum(as.numeric(survey_data$used_anki_institute == 1), 
+                         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_2_yes_and_5_yes <- 
+                  rowsum(as.numeric(survey_data$used_anki_institute == 1 &
+                                      survey_data$used_anki_institute_general == 1), 
+                         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_2_yes_but_5_not_yes <- 
+  rowsum(as.numeric(survey_data$used_anki_institute == 1 &
+                      (survey_data$used_anki_institute_general != 1 |
+                         is.na(survey_data$used_anki_institute_general))), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_2_yes_but_5_no <- 
+  rowsum(as.numeric(survey_data$used_anki_institute == 1 &
+                      (survey_data$used_anki_institute_general == 2)), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_yes <- rowsum(as.numeric(survey_data$used_anki_institute_general == 1), 
+                                group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_yes_and_2_yes <- 
+  rowsum(as.numeric(survey_data$used_anki_institute_general == 1 &
+                      survey_data$used_anki_institute == 1), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_yes_but_2_not_yes <- 
+  rowsum(as.numeric(survey_data$used_anki_institute_general == 1 &
+                      (survey_data$used_anki_institute != 1 |
+                         is.na(survey_data$used_anki_institute))), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_yes_but_2_no <- 
+  rowsum(as.numeric(survey_data$used_anki_institute_general == 1 &
+                      (survey_data$used_anki_institute == 0)), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+df_used_anki_yes <- data.frame(q_2_yes,
+                               q_2_yes_and_5_yes, 
+                               q_2_yes_but_5_not_yes,
+                               q_2_yes_but_5_no,
+                               q_5_yes,
+                               q_5_yes_and_2_yes,
+                               q_5_yes_but_2_not_yes,
+                               q_5_yes_but_2_no)
+                          
+t(df_used_anki_yes)
+
+# for either one answered with "no"
+q_2_no <- rowsum(as.numeric(survey_data$used_anki_institute == 0), 
+                  group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_2_no_and_5_no <- 
+  rowsum(as.numeric(survey_data$used_anki_institute == 0 &
+                      survey_data$used_anki_institute_general == 2), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_2_no_but_5_not_no <- 
+  rowsum(as.numeric(survey_data$used_anki_institute == 0 &
+                      (survey_data$used_anki_institute_general != 2 |
+                         is.na(survey_data$used_anki_institute_general))), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_2_no_but_5_yes <- 
+  rowsum(as.numeric(survey_data$used_anki_institute == 0 &
+                      (survey_data$used_anki_institute_general == 1)), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_no <- rowsum(as.numeric(survey_data$used_anki_institute_general == 2), 
+                  group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_no_and_2_no <- 
+  rowsum(as.numeric(survey_data$used_anki_institute_general == 2 &
+                      survey_data$used_anki_institute == 0), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_no_but_2_not_no <- 
+  rowsum(as.numeric(survey_data$used_anki_institute_general == 2 &
+                      (survey_data$used_anki_institute != 0 |
+                         is.na(survey_data$used_anki_institute))), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+q_5_no_but_2_yes <- 
+  rowsum(as.numeric(survey_data$used_anki_institute_general == 2 &
+                      (survey_data$used_anki_institute == 1)), 
+         group = survey_data$exam, na.rm = TRUE)[groups, ]
+
+df_used_anki_no <- data.frame(q_2_no,
+                              q_2_no_and_5_no, 
+                              q_2_no_but_5_not_no,
+                              q_2_no_but_5_yes,
+                              q_5_no,
+                              q_5_no_and_2_no,
+                              q_5_no_but_2_not_no,
+                              q_5_no_but_2_yes)
+
+t(df_used_anki_no)
+
+
+#### t-tests and multiple Regression ----------------------------------------------
 inference_stat_subset <- boxplot_subset # subset with rows removed if anki_used_general is NA or score_percentage is NA or 0
 
 p_values_t_test <- rep(NA, length(unique(survey_data$exam)))
